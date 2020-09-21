@@ -319,8 +319,7 @@ protected:
 };
 
 /** A vector XY Pad slider control */
-class IVXYPadControl : public IControl
-                     , public IVectorBase
+class IVXYPadControl : public IControl, public IVectorBase
 {
 public:
   IVXYPadControl(const IRECT& bounds, const std::initializer_list<int>& params, const char* label = "", const IVStyle& style = DEFAULT_STYLE, float handleRadius = 10.f);
@@ -340,8 +339,7 @@ protected:
 };
 
 /** a vector plot to display functions and waveforms **/
-class IVPlotControl : public IControl
-                    , public IVectorBase
+class IVPlotControl : public IControl, public IVectorBase
 {
 public:
   /** IVPlotControl passes values between 0 and 1 to this object, that are the plot normalized x values */
@@ -388,8 +386,7 @@ protected:
 };
 
 /** A control to draw a rectangle around a named IControl group **/
-class IVGroupControl : public IControl
-                     , public IVectorBase
+class IVGroupControl : public IControl, public IVectorBase
 {
 public:
   IVGroupControl(const IRECT& bounds, const char* label = "", float labelOffset = 10.f, const IVStyle& style = DEFAULT_STYLE);
@@ -413,8 +410,7 @@ protected:
 };
 
 /** A panel control which can be styled with emboss etc. **/
-class IVPanelControl : public IControl
-                     , public IVectorBase
+class IVPanelControl : public IControl, public IVectorBase
 {
 public:
   IVPanelControl(const IRECT& bounds, const char* label = "", const IVStyle& style = DEFAULT_STYLE.WithColor(kFG, COLOR_TRANSLUCENT).WithEmboss(true))
@@ -445,8 +441,7 @@ public:
 };
 
 /** A control to show a colour swatch of up to 9 colous. **/
-class IVColorSwatchControl : public IControl
-                           , public IVectorBase
+class IVColorSwatchControl : public IControl, public IVectorBase
 {
 public:
   enum class ECellLayout { kGrid, kHorizontal, kVertical };
