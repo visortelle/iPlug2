@@ -27,8 +27,8 @@ BEGIN_IGRAPHICS_NAMESPACE
 class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
 {
   enum class GlideMode { Glissando, Pitch };
-  enum class KeyLayoutMode { Contiguous, Piano };
-  enum EValIDs { kGate = 0, kHeight, kRadius };
+  enum class KeyLayoutMode { Uniform, Piano };
+  enum EValIDs { kGate = 0, kHeight, kRadius, kNumVals };
   
   static const IColor DEFAULT_BK_COLOR;
   static const IColor DEFAULT_WK_COLOR;
@@ -45,16 +45,24 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
     , mIsSharp(isSharp)
     {
       mDblAsSingleClick = true;
-      SetNVals(2);
+      SetNVals(kNumVals);
     }
     
     void Draw(IGraphics& g) override
     {
-      g.FillRect(GetValue(EValIDs::kGate) > 0.5 ? COLOR_BLACK : COLOR_WHITE, mRECT);
-      g.DrawLine(COLOR_BLACK, mRECT.R-1, mRECT.T, mRECT.R-1, mRECT.B);
+      if(!mIsSharp)
+        g.FillRect(GetValue(EValIDs::kGate) > 0.5 ? COLOR_BLACK : COLOR_WHITE, mRECT);
+      else
+        g.FillRect(GetValue(EValIDs::kGate) > 0.5 ? COLOR_DARK_GRAY : COLOR_LIGHT_GRAY, mRECT);
+
+//      g.DrawLine(COLOR_BLACK, mRECT.R-1, mRECT.T, mRECT.R-1, mRECT.B);
       
-      if(mPointerDown)
+      if(mMouseDown)
+      {
         g.DrawHorizontalLine(COLOR_RED, mRECT, GetValue(EValIDs::kHeight));
+        g.DrawHorizontalLine(COLOR_GREEN, mRECT, GetValue(EValIDs::kRadius));
+      }
+      
       WDL_String str;
       str.SetFormatted(3, "%i", mIdx);
       g.DrawText(mText, str.Get(), mRECT);
@@ -62,33 +70,70 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
     
     void OnMouseDown(float x, float y, const IMouseMod& mod) override
     {
-      mPointerDown = true;
+      mMouseDown = true;
       //parent sets this one dirty
+      SetValue(mod.touchRadius / 100.f, EValIDs::kRadius);
       SnapToMouse(x, y, EDirection::Vertical, mRECT, EValIDs::kHeight);
-      GetKeyboard()->AddTouch(mod.touchID, x, y, mod.touchRadius);
-      GetKeyboard()->SetHit(mod.touchID, this);
+      
+      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      
+      pKeyBoard->SetHit(mod.touchID, this);
+
+      if(pKeyBoard->DrawTouches())
+      {
+        pKeyBoard->AddTouch(mod.touchID, x, y, mod.touchRadius);
+        pKeyBoard->SetDirty();
+      }
     }
     
     void OnMouseUp(float x, float y, const IMouseMod& mod) override
     {
-      mPointerDown = false;
+      mMouseDown = false;
 
-      GetKeyboard()->ReleaseTouch(mod.touchID);
-      GetKeyboard()->ClearHitIfMovedOffKey(mod.touchID, nullptr);
+      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      
+      SetValue(0., EValIDs::kRadius);
+      SetValue(0., EValIDs::kHeight);
+      
+      pKeyBoard->ClearHitIfMovedOffKey(mod.touchID, nullptr);
+
+      if(pKeyBoard->DrawTouches())
+      {
+        pKeyBoard->ReleaseTouch(mod.touchID);
+        pKeyBoard->SetDirty();
+      }
+      
+      SetDirty(false);
     }
     
     void OnMouseDrag(float x, float y, float dX, float dY, const IMouseMod& mod) override
     {
-      GetKeyboard()->UpdateTouch(mod.touchID, x, y, mod.touchRadius);
-      GetKeyboard()->HitMoved(mod.touchID, this);
-      
+      SetValue(mod.touchRadius / 100.f, EValIDs::kRadius); // TODO: max radius?
       SnapToMouse(x, y, EDirection::Vertical, mRECT, EValIDs::kHeight);
-      GetKeyboard()->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
+      
+      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      
+      if(pKeyBoard->DrawTouches())
+      {
+        pKeyBoard->UpdateTouch(mod.touchID, x, y, mod.touchRadius);
+        pKeyBoard->HitMoved(mod.touchID, this);
+        pKeyBoard->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
+      }
     }
     
     void OnTouchCancelled(float x, float y, const IMouseMod& mod) override
     {
-      GetKeyboard()->ClearAllTouches();
+      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      
+      SetValue(0., EValIDs::kRadius);
+      SetValue(0., EValIDs::kHeight);
+      
+      if(pKeyBoard->DrawTouches())
+      {
+        pKeyBoard->ClearAllTouches();
+        pKeyBoard->SendAllNotesOffMsg();
+        pKeyBoard->ClearNotes();
+      }
     }
     
     int GetIdx() const
@@ -101,27 +146,9 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       return dynamic_cast<IVKeyboardControl*>(GetParent());
     }
     
-    bool mPointerDown = false;
+    bool mMouseDown = false; // or finger
     bool mIsSharp;
     int mIdx;
-  };
-  
-  class HighlightControl : public IControl
-  {
-  public:
-    HighlightControl(const IRECT& bounds, const IColor& color)
-    : IControl(bounds)
-    , mColor(color)
-    {
-      mIgnoreMouse = true;
-    }
-    
-    void Draw(IGraphics& g) override
-    {
-      g.FillEllipse(mColor, mRECT);
-    }
-  private:
-    IColor mColor;
   };
   
 #pragma mark -
@@ -136,20 +163,65 @@ public:
   {
     SetNoteRange(minNote, maxNote);
     SetWantsMidi(true);
-//    SetWantsMultiTouch(true);
     mIgnoreMouse = true;
     SetTargetRECT(IRECT());
   }
   
-  void OnAttached() override
+  // OnInit, so the child controls are beneath the touch controls
+  void OnInit() override
   {
     AddChildControl(mBackGroundControl = new IPanelControl(mRECT, COLOR_BLACK));
     CreateKeys(true);
-//    CreateHighlights();
+  }
+  
+  bool DrawTouches() const
+  {
+    return GetUI()->PlatformSupportsMultiTouch() && GetMPEEnabled();
   }
   
   void Draw(IGraphics& g) override
   {
+    if(DrawTouches())
+    {
+      if (g.CheckLayer(mLayer))
+      {
+//        g.ResumeLayer(mLayer);
+        g.StartLayer(this, mRECT);
+
+        WDL_String str;
+
+        for (auto& touchPair : mTrackedTouches)
+        {
+          TrackedTouch* pTouch = &touchPair.second;
+          
+          IRECT sourceBounds = mTouchPrevouslyHit[touchPair.first]->GetRECT();
+          
+          int t = pTouch->index;
+          float dim = pTouch->radius > 0.f ? pTouch->radius : 50.f;
+          IRECT r {pTouch->x-dim,pTouch->y-dim,pTouch->x+dim, pTouch->y+dim};
+          
+          IColor c = GetRainbow(t);
+          
+          g.DrawLine(c, sourceBounds.MW(), sourceBounds.MH(), pTouch->x, pTouch->y);
+          g.DrawEllipse(c, r);
+//          g.DrawEllipse(COLOR_BLACK, r);
+        }
+      }
+      else
+      {
+        g.StartLayer(this, mRECT);
+      }
+
+      mLayer = g.EndLayer();
+      g.DrawLayer(mLayer);
+    }
+  }
+  
+  void SendAllNotesOffMsg()
+  {
+    IMidiMsg msg;
+    msg.MakeControlChangeMsg(IMidiMsg::kAllNotesOff, 1.f);
+    GetDelegate()->SendMidiMsgFromUI(msg);
   }
   
   void SendMidiNoteMsg(int key, int velocity)
@@ -192,7 +264,7 @@ public:
     {
       KeyControl* pPrevKey = itr->second;
       
-      if(pPrevKey != pKey)
+      if(pPrevKey && pPrevKey != pKey)
       {
         pPrevKey->SetValue(0., EValIDs::kGate);
         pPrevKey->SetDirty(false);
@@ -207,36 +279,45 @@ public:
    * @param pKey ptr to the key being set on */
   void HitMoved(ITouchID touchId, KeyControl* pKey)
   {
+    SetDirty();
     TrackedTouch* pTouch = GetTouchWithIdentifier(touchId);
 
     if(pTouch)
     {
-      auto radius = pTouch->radius;
+      int n = mKeyControls.GetSize();
       
-      //loop over keycontrols and set dirty if touch is inside
-      for(int i=0;i<mKeyControls.GetSize();i++)
+      for(int i=0; i<n; i++)
       {
         KeyControl* pTestKey = mKeyControls.Get(i);
-        
-        if(pTestKey->IsHit(pTouch->x-radius, pTouch->y-radius))
-          pTestKey->SetDirty();
-        
-        if(pTestKey->IsHit(pTouch->x+radius, pTouch->y+radius))
-          pTestKey->SetDirty();
+
+        if(pTestKey->IsHit(pTouch->x, pTouch->y))
+        {
+          ClearHitIfMovedOffKey(touchId, pKey);
+          SetHit(touchId, pTestKey);
+          break;
+        }
       }
     }
-
-//    ClearHitIfMovedOffKey(touchId, pKey);
-//
-//    for(int i=0;i<mKeyControls.GetSize();i++)
-//    {
-//      KeyControl* pTestKey = mKeyControls.Get(i);
-//
-//      if(pTestKey->IsHit(pTouch->x, pTouch->y))
-//      {
-//        SetHit(touchId, pTestKey);
-//      }
-//    }
+  }
+  
+  void ClearNotes()
+  {
+    for(int i=0; i<mKeyControls.GetSize(); i++)
+    {
+      KeyControl* pKeyControl = mKeyControls.Get(i);
+      pKeyControl->SetValue(0.f, kGate);
+      pKeyControl->SetValue(0.f, kHeight);
+      pKeyControl->SetValue(0.f, kRadius);
+      pKeyControl->SetDirty(false);
+    }
+  }
+  
+  void DirtyAllKeys()
+  {
+    for(int i=0; i<mKeyControls.GetSize(); i++)
+    {
+      mKeyControls.Get(i)->SetDirty(false);
+    }
   }
   
   void OnMidi(const IMidiMsg& msg) override
@@ -256,7 +337,7 @@ public:
       default: break;
     }
 
-    SetDirty(false);
+//    SetDirty(false);
   }
   
   void OnResize() override
@@ -269,25 +350,20 @@ public:
       {
         mKeyControls.Get(i)->SetTargetAndDrawRECTs(mRECT.GetGridCell(i, 1, mKeyControls.GetSize()));
       }
-      
-      //TODO: highlights
     }
   }
   
   /** Sets a note state, if the keyboard contains that note
    * @param note MIDI pitch to toggle
    * @param on If the note should be on */
-  void SetNote(int note, bool on)
+  void SetNote(int noteNum, bool on)
   {
-    //    if (noteNum < mMinNote || noteNum > mMaxNote) return;
-    //    SetKeyIsPressed(noteNum - mMinNote, played);
-  }
-  
-  /** Set all notes off */
-  void ClearNotes()
-  {
-    //    memset(mPressedKeys.Get(), 0, mPressedKeys.GetSize() * sizeof(bool));
-    //    SetDirty(false);
+    if (noteNum < mMinNote || noteNum > mMaxNote) return;
+    
+    KeyControl* pControl = mKeyControls.Get(noteNum - mMinNote);
+    
+    pControl->SetValue(on ? 1. : 0., kGate);
+    pControl->SetDirty(false);
   }
   
   /** @param min The minimum note the keyboard should display
@@ -309,25 +385,14 @@ public:
     }
   }
   
-  void CreateHighlights()
-  {
-    for(int i=0;i<MAX_TOUCHES;i++)
-    {
-      HighlightControl* pNewHightlightControl = new HighlightControl(mRECT.GetCentredInside(10), GetRainbow(i%7));
-//      pNewHightlightControl->Hide(true);
-      AddChildControl(pNewHightlightControl);
-      mHighlightControls.Add(pNewHightlightControl);
-    }
-  }
-  
   /** @param maintainWidth Set true if keys should resize to fit parent bounds */
   void CreateKeys(bool maintainWidth)
   {
-    int numWhiteKeys = mMaxNote-mMinNote;
+    int numWhiteKeys = (mMaxNote-mMinNote)+1;
     
-    for(int i=0; i< numWhiteKeys;i++)
+    for(int i=0; i<numWhiteKeys; i++)
     {
-      KeyControl* pNewKeyControl = new KeyControl(mRECT.GetGridCell(i, 1, numWhiteKeys), i, false);
+      KeyControl* pNewKeyControl = new KeyControl(mRECT.GetGridCell(i, 1, numWhiteKeys), i, i%2);
       AddChildControl(pNewKeyControl);
       mKeyControls.Add(pNewKeyControl);
     }
@@ -353,13 +418,12 @@ public:
   }
   
 protected:
+  ILayerPtr mLayer;
   bool mMPEMode = false;
   WDL_PtrList<KeyControl> mKeyControls;
-  WDL_PtrList<HighlightControl> mHighlightControls;
   IPanelControl* mBackGroundControl = nullptr;
   bool mKeysAreContiguous = false;
   int mMinNote, mMaxNote;
-  ILayerPtr mLayer;
   std::map<ITouchID, KeyControl*> mTouchPrevouslyHit; // assoc array linking touch IDs to KeyControl last hit by that touches x,y
 };
 
