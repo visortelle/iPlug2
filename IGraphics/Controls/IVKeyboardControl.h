@@ -26,8 +26,8 @@ BEGIN_IGRAPHICS_NAMESPACE
 
 class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
 {
-  enum class GlideMode { Glissando, Pitch };
-  enum class KeyLayoutMode { Uniform, Piano };
+  enum class EGlideMode { Glissando, PitchBend };
+  enum class EKeyLayoutMode { Uniform, Piano };
   enum EValIDs { kGate = 0, kHeight, kRadius, kNumVals };
   
   static const IColor DEFAULT_BK_COLOR;
@@ -42,6 +42,7 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
     KeyControl(const IRECT& bounds, int idx, bool isSharp)
     : IControl(bounds)
     , mIdx(idx)
+    , mLastHitKey(idx)
     , mIsSharp(isSharp)
     {
       mDblAsSingleClick = true;
@@ -75,14 +76,14 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       SetValue(mod.touchRadius / 100.f, EValIDs::kRadius);
       SnapToMouse(x, y, EDirection::Vertical, mRECT, EValIDs::kHeight);
       
-      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      IVKeyboardControl* pKeyboard = GetKeyboard();
       
-      pKeyBoard->SetHit(mod.touchID, this);
+      pKeyboard->SetHit(mod.touchID, this, GetValue(EValIDs::kHeight));
 
-      if(pKeyBoard->DrawTouches())
+      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
       {
-        pKeyBoard->AddTouch(mod.touchID, x, y, mod.touchRadius);
-        pKeyBoard->SetDirty();
+        pKeyboard->AddTouch(mod.touchID, x, y, mod.touchRadius);
+        pKeyboard->SetDirty();
       }
     }
     
@@ -90,17 +91,17 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
     {
       mMouseDown = false;
 
-      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      IVKeyboardControl* pKeyboard = GetKeyboard();
       
       SetValue(0., EValIDs::kRadius);
       SetValue(0., EValIDs::kHeight);
       
-      pKeyBoard->ClearHitIfMovedOffKey(mod.touchID, nullptr);
+      pKeyboard->ClearHitIfMovedOffKey(mod.touchID, nullptr);
 
-      if(pKeyBoard->DrawTouches())
+      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
       {
-        pKeyBoard->ReleaseTouch(mod.touchID);
-        pKeyBoard->SetDirty();
+        pKeyboard->ReleaseTouch(mod.touchID);
+        pKeyboard->SetDirty();
       }
       
       SetDirty(false);
@@ -111,34 +112,44 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       SetValue(mod.touchRadius / 100.f, EValIDs::kRadius); // TODO: max radius?
       SnapToMouse(x, y, EDirection::Vertical, mRECT, EValIDs::kHeight);
       
-      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      IVKeyboardControl* pKeyboard = GetKeyboard();
       
-      if(pKeyBoard->DrawTouches())
+      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
       {
-        pKeyBoard->UpdateTouch(mod.touchID, x, y, mod.touchRadius);
-        pKeyBoard->HitMoved(mod.touchID, this);
-        pKeyBoard->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
+        pKeyboard->UpdateTouch(mod.touchID, x, y, mod.touchRadius);
+        pKeyboard->HitMoved(mod.touchID, this);
+        pKeyboard->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
       }
     }
     
     void OnTouchCancelled(float x, float y, const IMouseMod& mod) override
     {
-      IVKeyboardControl* pKeyBoard = GetKeyboard();
+      IVKeyboardControl* pKeyboard = GetKeyboard();
       
       SetValue(0., EValIDs::kRadius);
       SetValue(0., EValIDs::kHeight);
       
-      if(pKeyBoard->DrawTouches())
+      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
       {
-        pKeyBoard->ClearAllTouches();
-        pKeyBoard->SendAllNotesOffMsg();
-        pKeyBoard->ClearNotes();
+        pKeyboard->ClearAllTouches();
+        pKeyboard->SendAllNotesOffMsg();
+        pKeyboard->ClearNotes();
       }
     }
     
     int GetIdx() const
     {
       return mIdx;
+    }
+    
+    int GetLastHitKey() const
+    {
+      return mLastHitKey;
+    }
+    
+    void SetLastHitKey(int v)
+    {
+      mLastHitKey = v;
     }
     
   private:
@@ -149,6 +160,7 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
     bool mMouseDown = false; // or finger
     bool mIsSharp;
     int mIdx;
+    int mLastHitKey; // If a glissando gesture starts from this key this gets modified on each change
   };
   
 #pragma mark -
@@ -174,14 +186,9 @@ public:
     CreateKeys(true);
   }
   
-  bool DrawTouches() const
-  {
-    return GetUI()->PlatformSupportsMultiTouch() && GetMPEEnabled();
-  }
-  
   void Draw(IGraphics& g) override
   {
-    if(DrawTouches())
+    if(g.PlatformSupportsMultiTouch() && GetMPEEnabled() && mGlideMode == EGlideMode::PitchBend)
     {
       if (g.CheckLayer(mLayer))
       {
@@ -194,7 +201,7 @@ public:
         {
           TrackedTouch* pTouch = &touchPair.second;
           
-          IRECT sourceBounds = mTouchPrevouslyHit[touchPair.first]->GetRECT();
+//          IRECT sourceBounds = mTouchPrevouslyHit[touchPair.first]->GetRECT();
           
           int t = pTouch->index;
           float dim = pTouch->radius > 0.f ? pTouch->radius : 50.f;
@@ -202,7 +209,7 @@ public:
           
           IColor c = GetRainbow(t);
           
-          g.DrawLine(c, sourceBounds.MW(), sourceBounds.MH(), pTouch->x, pTouch->y);
+//          g.DrawLine(c, sourceBounds.MW(), sourceBounds.MH(), pTouch->x, pTouch->y);
           g.DrawEllipse(c, r);
 //          g.DrawEllipse(COLOR_BLACK, r);
         }
@@ -241,11 +248,12 @@ public:
   /** Sets a keys state to on, if its not allready, storing an ptr to the keycontrol in a map, keyed by the touch identifier
    * @param touchID The touch identifier
    * @param pKey ptr to the key being set on */
-  void SetHit(ITouchID touchId, KeyControl* pKey)
+  void SetHit(ITouchID touchId, KeyControl* pKey, float prevHeight = 1.f)
   {
     if(pKey->GetValue(EValIDs::kGate) < 0.5)
     {
       pKey->SetValue(1., EValIDs::kGate);
+      pKey->SetValue(prevHeight, EValIDs::kHeight);
       pKey->SetDirty(false);
       mTouchPrevouslyHit[touchId] = pKey;
       SendMidiNoteMsg(pKey->GetIdx(), 1 + static_cast<int>(pKey->GetValue(EValIDs::kHeight) * 126));
@@ -263,8 +271,8 @@ public:
     if(itr != mTouchPrevouslyHit.end())
     {
       KeyControl* pPrevKey = itr->second;
-      
-      if(pPrevKey && pPrevKey != pKey)
+
+      if(pPrevKey)
       {
         pPrevKey->SetValue(0., EValIDs::kGate);
         pPrevKey->SetDirty(false);
@@ -280,21 +288,35 @@ public:
   void HitMoved(ITouchID touchId, KeyControl* pKey)
   {
     SetDirty();
-    TrackedTouch* pTouch = GetTouchWithIdentifier(touchId);
-
-    if(pTouch)
+    
+    if(mGlideMode == EGlideMode::Glissando)
     {
-      int n = mKeyControls.GetSize();
-      
-      for(int i=0; i<n; i++)
-      {
-        KeyControl* pTestKey = mKeyControls.Get(i);
+      TrackedTouch* pTouch = GetTouchWithIdentifier(touchId);
 
+      if(pTouch)
+      {
+        // first check last hit key
+        KeyControl* pTestKey = mKeyControls.Get(pKey->GetLastHitKey());
+        
         if(pTestKey->IsHit(pTouch->x, pTouch->y))
         {
-          ClearHitIfMovedOffKey(touchId, pKey);
-          SetHit(touchId, pTestKey);
-          break;
+          return;
+        }
+       
+        int n = mKeyControls.GetSize();
+
+        for(int i=0; i<n; i++)
+        {
+          KeyControl* pTestKey = mKeyControls.Get(i);
+
+          if(pTestKey->IsHit(pTouch->x, pTouch->y))
+          {
+            float existingHeight = pKey->GetValue(kHeight);
+            pKey->SetLastHitKey(i);
+            ClearHitIfMovedOffKey(touchId, pKey);
+            SetHit(touchId, pTestKey, existingHeight);
+            break;
+          }
         }
       }
     }
@@ -417,7 +439,16 @@ public:
     return mMPEMode;
   }
   
+  void SetPitchBendMode(bool enable)
+  {
+    mGlideMode = enable ? EGlideMode::PitchBend : EGlideMode::Glissando;
+    ClearNotes();
+    ClearAllTouches();
+    SetDirty();
+  }
+  
 protected:
+  EGlideMode mGlideMode = EGlideMode::Glissando;
   ILayerPtr mLayer;
   bool mMPEMode = false;
   WDL_PtrList<KeyControl> mKeyControls;
