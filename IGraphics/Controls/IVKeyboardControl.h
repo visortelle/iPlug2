@@ -80,7 +80,7 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       
       pKeyboard->SetHit(mod.touchID, this, GetValue(EValIDs::kHeight));
 
-      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
+      if(GetUI()->PlatformSupportsMultiTouch())
       {
         pKeyboard->AddTouch(mod.touchID, x, y, mod.touchRadius);
         pKeyboard->SetDirty();
@@ -98,7 +98,7 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       
       pKeyboard->ClearHitIfMovedOffKey(mod.touchID, nullptr);
 
-      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
+      if(GetUI()->PlatformSupportsMultiTouch())
       {
         pKeyboard->ReleaseTouch(mod.touchID);
         pKeyboard->SetDirty();
@@ -114,11 +114,13 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       
       IVKeyboardControl* pKeyboard = GetKeyboard();
       
-      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
+      if(GetUI()->PlatformSupportsMultiTouch())
       {
         pKeyboard->UpdateTouch(mod.touchID, x, y, mod.touchRadius);
         pKeyboard->HitMoved(mod.touchID, this);
-        pKeyboard->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
+        
+        if(pKeyboard->GetMPEEnabled())
+           pKeyboard->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
       }
     }
     
@@ -129,7 +131,7 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       SetValue(0., EValIDs::kRadius);
       SetValue(0., EValIDs::kHeight);
       
-      if(GetUI()->PlatformSupportsMultiTouch() && pKeyboard->GetMPEEnabled())
+      if(GetUI()->PlatformSupportsMultiTouch())
       {
         pKeyboard->ClearAllTouches();
         pKeyboard->SendAllNotesOffMsg();
