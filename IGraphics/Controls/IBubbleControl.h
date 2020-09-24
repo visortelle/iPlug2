@@ -196,18 +196,7 @@ protected:
   
   void DrawDropShadow(IGraphics& g, const IRECT& r)
   {
-  #ifdef IGRAPHICS_NANOVG
-    g.DrawFastDropShadow(r, mBubbleBounds, 2.0, mRoundness, 20.f, &mBlend);
-  #else
-//    if (!g.CheckLayer(mShadowLayer))
-//    {
-//      g.StartLayer(this, mBubbleBounds);
-//      g.FillRoundRect(COLOR_BLACK, r, mRoundness);
-//      mShadowLayer = g.EndLayer();
-//      g.ApplyLayerDropShadow(mShadowLayer, IShadow(COLOR_BLACK_DROP_SHADOW, 20.0, 0.0, yDrop, 1.0, true));
-//    }
-//    g.DrawLayer(mShadowLayer, &mBlend);
-  #endif
+    g.DrawFastDropShadow(r, mBubbleBounds, 2.0, mRoundness, 10.f, &mBlend);
   }
   
   virtual void MeasureText(const char* str, IRECT& contentBounds)
@@ -279,11 +268,6 @@ protected:
       
     SetRECT(mRECT.Union(mBubbleBounds));
 
-//    #ifndef IGRAPHICS_NANOVG
-//    if(mShadowLayer)
-//      mShadowLayer->Invalidate();
-//    #endif
-    
     if(mState == kCollapsed)
     {
       Hide(false);
@@ -309,9 +293,6 @@ protected:
   IRECT mBubbleBounds;
   IControl* mCaller = nullptr;
   EArrowDir mArrowDir = EArrowDir::kWest;
-//  #ifndef IGRAPHICS_NANOVG
-//  ILayerPtr mShadowLayer;
-//  #endif
   WDL_String mStr;
   IBlend mBlend = { EBlend::Default, 0.f }; // blend for sub panels appearing
   float mRoundness = 5.f; // The roundness of the corners of the menu panel backgrounds

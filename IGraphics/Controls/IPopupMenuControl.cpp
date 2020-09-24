@@ -16,11 +16,6 @@
 
 #include "IPopupMenuControl.h"
 
-// TODO: drop shadow on non-nanovg backends too slow
-#ifndef ENABLE_SHADOW
-  #define ENABLE_SHADOW 0
-#endif
-
 #ifdef IGRAPHICS_NANOVG
 #include "nanovg.h"
 #endif
@@ -341,22 +336,8 @@ void IPopupMenuControl::DrawPanelBackground(IGraphics& g, MenuPanel* panel)
 
 void IPopupMenuControl::DrawPanelShadow(IGraphics& g, MenuPanel* panel)
 {
-#if defined IGRAPHICS_NANOVG || ENABLE_SHADOW
   IRECT inner = panel->mRECT.GetPadded(-mDropShadowSize);
-#endif
-    
-#ifdef IGRAPHICS_NANOVG
-  g.DrawFastDropShadow(inner, panel->mRECT, 2.0, mRoundness * 2.f, 10.f, &panel->mBlend);
-#elif ENABLE_SHADOW
-  if (!g.CheckLayer(panel->mShadowLayer))
-  {
-    g.StartLayer(this, panel->mRECT);
-    g.FillRoundRect(COLOR_BLACK, inner, mRoundness);
-    panel->mShadowLayer = g.EndLayer();
-    g.ApplyLayerDropShadow(panel->mShadowLayer, IShadow(COLOR_BLACK_DROP_SHADOW, 20.0, 0.0, yDrop, 1.0, true));
-  }
-  g.DrawLayer(panel->mShadowLayer, &panel->mBlend);
-#endif
+  g.DrawFastDropShadow(inner, panel->mRECT, 2.0, mRoundness, 10.f, &panel->mBlend);
 }
 
 void IPopupMenuControl::DrawCellBackground(IGraphics& g, const IRECT& bounds, const IPopupMenu::Item* pItem, bool sel, IBlend* pBlend)
