@@ -861,6 +861,20 @@ void IGraphics::DrawControl(IControl* pControl, const IRECT& bounds, float scale
     if (clipBounds.W() <= 0.0 || clipBounds.H() <= 0)
       return;
     
+    IControl* pParent = pControl->GetParent();
+    
+    while (pParent)
+    {
+      IRECT parentBounds = pParent->GetRECT().GetPadded(0.75).GetPixelAligned(scale);
+
+      if(!clipBounds.Intersects(parentBounds))
+        return;
+
+      clipBounds.Clank(parentBounds);
+      
+      pParent = pParent->GetParent();
+    }
+    
     PrepareRegion(clipBounds);
     pControl->Draw(*this);
 #ifdef AAX_API
