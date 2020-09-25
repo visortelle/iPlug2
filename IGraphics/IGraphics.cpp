@@ -202,25 +202,22 @@ void IGraphics::RemoveAllControls()
   mControls.Empty(true);
 }
 
-void IGraphics::SetControlPosition(int idx, float x, float y)
+void IGraphics::SetControlPosition(IControl* pControl, float x, float y)
 {
-  IControl* pControl = GetControl(idx);
   pControl->SetPosition(x, y);
   if (!pControl->IsHidden())
     SetAllControlsDirty();
 }
 
-void IGraphics::SetControlSize(int idx, float w, float h)
+void IGraphics::SetControlSize(IControl* pControl, float w, float h)
 {
-  IControl* pControl = GetControl(idx);
   pControl->SetSize(w, h);
   if (!pControl->IsHidden())
     SetAllControlsDirty();
 }
 
-void IGraphics::SetControlBounds(int idx, const IRECT& r)
+void IGraphics::SetControlBounds(IControl* pControl, const IRECT& r)
 {
-  IControl* pControl = GetControl(idx);
   pControl->SetTargetAndDrawRECTs(r);
   if (!pControl->IsHidden())
     SetAllControlsDirty();
