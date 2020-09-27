@@ -79,12 +79,8 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       IVKeyboardControl* pKeyboard = GetKeyboard();
       
       pKeyboard->SetHit(mod.touchID, this, GetValue(EValIDs::kHeight));
-
-      if(GetUI()->PlatformSupportsMultiTouch())
-      {
-        pKeyboard->AddTouch(mod.touchID, x, y, mod.touchRadius);
-        pKeyboard->SetDirty();
-      }
+      pKeyboard->AddTouch(mod.touchID, x, y, mod.touchRadius);
+      pKeyboard->SetDirty();
     }
     
     void OnMouseUp(float x, float y, const IMouseMod& mod) override
@@ -97,12 +93,8 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       SetValue(0., EValIDs::kHeight);
       
       pKeyboard->ClearHitIfMovedOffKey(mod.touchID, nullptr);
-
-      if(GetUI()->PlatformSupportsMultiTouch())
-      {
-        pKeyboard->ReleaseTouch(mod.touchID);
-        pKeyboard->SetDirty();
-      }
+      pKeyboard->ReleaseTouch(mod.touchID);
+      pKeyboard->SetDirty();
       
       SetDirty(false);
     }
@@ -114,14 +106,11 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       
       IVKeyboardControl* pKeyboard = GetKeyboard();
       
-      if(GetUI()->PlatformSupportsMultiTouch())
-      {
-        pKeyboard->UpdateTouch(mod.touchID, x, y, mod.touchRadius);
-        pKeyboard->HitMoved(mod.touchID, this);
-        
-        if(pKeyboard->GetMPEEnabled())
-           pKeyboard->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
-      }
+      pKeyboard->UpdateTouch(mod.touchID, x, y, mod.touchRadius);
+      pKeyboard->HitMoved(mod.touchID, this);
+      
+      if(pKeyboard->GetMPEEnabled())
+         pKeyboard->SendCtrl1(mod.touchID, GetValue(EValIDs::kHeight));
     }
     
     void OnTouchCancelled(float x, float y, const IMouseMod& mod) override
@@ -131,12 +120,9 @@ class IVKeyboardControl : public IContainer, public IMultiTouchControlBase
       SetValue(0., EValIDs::kRadius);
       SetValue(0., EValIDs::kHeight);
       
-      if(GetUI()->PlatformSupportsMultiTouch())
-      {
-        pKeyboard->ClearAllTouches();
-        pKeyboard->SendAllNotesOffMsg();
-        pKeyboard->ClearNotes();
-      }
+      pKeyboard->ClearAllTouches();
+      pKeyboard->SendAllNotesOffMsg();
+      pKeyboard->ClearNotes();
     }
     
     int GetIdx() const
@@ -190,7 +176,7 @@ public:
   
   void Draw(IGraphics& g) override
   {
-    if(g.PlatformSupportsMultiTouch() && GetMPEEnabled() && mGlideMode == EGlideMode::PitchBend)
+    if(GetMPEEnabled() && mGlideMode == EGlideMode::PitchBend)
     {
       if (g.CheckLayer(mLayer))
       {
