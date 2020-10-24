@@ -1578,56 +1578,56 @@ protected:
       }
     }
     
-    assert(fillRect.W() >= 0.);
-    assert(fillRect.H() >= 0.);
-    
-    if(stepped)
+    if(fillRect.W() > 0. && fillRect.H() > 0.)
     {
-      int step = GetStepIdxForPos(fillRect.R, fillRect.T);
+      if(stepped)
+      {
+        int step = GetStepIdxForPos(fillRect.R, fillRect.T);
 
-      if (step > -1)
-      {
-        if(mDirection == EDirection::Horizontal)
+        if (step > -1)
         {
-          fillRect.L = mStepBounds.Get()[step].L;
-          fillRect.R = mStepBounds.Get()[step].R;
+          if(mDirection == EDirection::Horizontal)
+          {
+            fillRect.L = mStepBounds.Get()[step].L;
+            fillRect.R = mStepBounds.Get()[step].R;
+          }
+          else
+          {
+            fillRect.T = mStepBounds.Get()[step].T;
+            fillRect.B = mStepBounds.Get()[step].B;
+          }
         }
-        else
-        {
-          fillRect.T = mStepBounds.Get()[step].T;
-          fillRect.B = mStepBounds.Get()[step].B;
-        }
-      }
-      
-      if(mZeroValueStepHasBounds || GetValue(chIdx) > 0.)
-        DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
-    }
-    else
-    {
-      DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
-      
-      IRECT peakRect;
-      
-      if(mDirection == EDirection::Vertical)
-      {
-        peakRect = IRECT(fillRect.L,
-                         trackPos < mBaseValue ? fillRect.B : fillRect.T,
-                         fillRect.R,
-                         trackPos < mBaseValue ? fillRect.B - mPeakSize: fillRect.T + mPeakSize);
+        
+        if(mZeroValueStepHasBounds || GetValue(chIdx) > 0.)
+          DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
       }
       else
       {
-        peakRect = IRECT(trackPos < mBaseValue ? fillRect.L + mPeakSize : fillRect.R - mPeakSize,
-                         fillRect.T,
-                         trackPos < mBaseValue ? fillRect.L : fillRect.R,
-                         fillRect.B);
+        DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
+        
+        IRECT peakRect;
+        
+        if(mDirection == EDirection::Vertical)
+        {
+          peakRect = IRECT(fillRect.L,
+                           trackPos < mBaseValue ? fillRect.B : fillRect.T,
+                           fillRect.R,
+                           trackPos < mBaseValue ? fillRect.B - mPeakSize: fillRect.T + mPeakSize);
+        }
+        else
+        {
+          peakRect = IRECT(trackPos < mBaseValue ? fillRect.L + mPeakSize : fillRect.R - mPeakSize,
+                           fillRect.T,
+                           trackPos < mBaseValue ? fillRect.L : fillRect.R,
+                           fillRect.B);
+        }
+        
+        DrawPeak(g, peakRect, chIdx, trackPos > mBaseValue);
       }
-      
-      DrawPeak(g, peakRect, chIdx, trackPos > mBaseValue);
-    }
 
-    if(mStyle.drawFrame && mDrawTrackFrame)
-      g.DrawRect(GetColor(kFR), r, &mBlend, mStyle.frameThickness);
+      if(mStyle.drawFrame && mDrawTrackFrame)
+        g.DrawRect(GetColor(kFR), r, &mBlend, mStyle.frameThickness);
+    }
   }
 
   virtual void DrawTrackBackground(IGraphics& g, const IRECT& r, int chIdx)
@@ -1747,8 +1747,13 @@ public:
   void OnMouseUp(float x, float y, const IMouseMod& mod) override;
   
   int GetSelectedIdx() const { return int(0.5 + GetValue() * (double) (mNumStates - 1)); }
+  
+  void SetStateDisabled(int stateIdx, bool disabled);
+  void SetAllStatesDisabled(bool disabled);
+  bool GetStateDisabled(int stateIdx) const;
 protected:
   int mNumStates;
+  WDL_TypedBuf<bool> mDisabledState;
   bool mMouseDown = false;
 };
 
