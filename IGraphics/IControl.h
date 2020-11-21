@@ -402,11 +402,11 @@ public:
    * @return \c true if the control is marked dirty. */
   virtual bool IsDirty();
 
-  /** Disable/enable right-clicking the control to prompt for user input /todo check this
+  /** Disable/enable right-clicking the control to prompt for user input \todo check this
    * @param disable \c true*/
   void DisablePrompt(bool disable) { mDisablePrompt = disable; }
 
-  /** This is an idle call from the GUI thread, only active if USE_IDLE_CALLS is defined. /todo check this */
+  /** This is an idle call from the GUI thread, only active if USE_IDLE_CALLS is defined. \todo check this */
   virtual void OnGUIIdle() {}
   
   /** Get the control's tag. @see Control Tags */
@@ -470,7 +470,7 @@ public:
    * @param y The Y coordinate for snapping
    * @param direction The direction of the control's travel- horizontal or vertical fader
    * @param bounds The area in which the track of e.g. a slider should be snapped
-   * @param valIdx /todo */
+   * @param valIdx \todo */
   virtual void SnapToMouse(float x, float y, EDirection direction, const IRECT& bounds, int valIdx = -1, double minClip = 0., double maxClip = 1.);
 
   /* if you override this you must call the base implementation, to free mAnimationFunc */
@@ -916,12 +916,12 @@ public:
       g.DrawEllipse(GetColor(kFR), handleBounds, &blend, mStyle.frameThickness);
   }
   
-  /** /todo
-   @param IGraphics&g /todo
-   @param bounds /todo
-   @param pressed /todo
-   @param mouseOver /todo
-   @return /todo */
+  /** \todo
+   @param IGraphics&g \todo
+   @param bounds \todo
+   @param pressed \todo
+   @param mouseOver \todo
+   @return \todo */
   IRECT DrawPressableRectangle(IGraphics&g, const IRECT& bounds, bool pressed, bool mouseOver, bool disabled,
                                bool rtl = true, bool rtr = true, bool rbl = true, bool rbr = true)
   {
@@ -1260,7 +1260,7 @@ protected:
   EDirection mDirection;
   double mGearing;
   bool mMouseDown = false;
-  double mMouseDragValue;
+  double mMouseDragValue = 0.0;
 };
 
 /** A base class for slider/fader controls, to handle mouse action and Sender. */
@@ -1578,56 +1578,56 @@ protected:
       }
     }
     
-    if(fillRect.W() > 0. && fillRect.H() > 0.)
+    assert(fillRect.W() >= 0.);
+    assert(fillRect.H() >= 0.);
+    
+    if(stepped)
     {
-      if(stepped)
-      {
-        int step = GetStepIdxForPos(fillRect.R, fillRect.T);
+      int step = GetStepIdxForPos(fillRect.R, fillRect.T);
 
-        if (step > -1)
-        {
-          if(mDirection == EDirection::Horizontal)
-          {
-            fillRect.L = mStepBounds.Get()[step].L;
-            fillRect.R = mStepBounds.Get()[step].R;
-          }
-          else
-          {
-            fillRect.T = mStepBounds.Get()[step].T;
-            fillRect.B = mStepBounds.Get()[step].B;
-          }
-        }
-        
-        if(mZeroValueStepHasBounds || GetValue(chIdx) > 0.)
-          DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
-      }
-      else
+      if (step > -1)
       {
-        DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
-        
-        IRECT peakRect;
-        
-        if(mDirection == EDirection::Vertical)
+        if(mDirection == EDirection::Horizontal)
         {
-          peakRect = IRECT(fillRect.L,
-                           trackPos < mBaseValue ? fillRect.B : fillRect.T,
-                           fillRect.R,
-                           trackPos < mBaseValue ? fillRect.B - mPeakSize: fillRect.T + mPeakSize);
+          fillRect.L = mStepBounds.Get()[step].L;
+          fillRect.R = mStepBounds.Get()[step].R;
         }
         else
         {
-          peakRect = IRECT(trackPos < mBaseValue ? fillRect.L + mPeakSize : fillRect.R - mPeakSize,
-                           fillRect.T,
-                           trackPos < mBaseValue ? fillRect.L : fillRect.R,
-                           fillRect.B);
+          fillRect.T = mStepBounds.Get()[step].T;
+          fillRect.B = mStepBounds.Get()[step].B;
         }
-        
-        DrawPeak(g, peakRect, chIdx, trackPos > mBaseValue);
       }
-
-      if(mStyle.drawFrame && mDrawTrackFrame)
-        g.DrawRect(GetColor(kFR), r, &mBlend, mStyle.frameThickness);
+      
+      if(mZeroValueStepHasBounds || GetValue(chIdx) > 0.)
+        DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
     }
+    else
+    {
+      DrawTrackHandle(g, fillRect, chIdx, trackPos > mBaseValue);
+      
+      IRECT peakRect;
+      
+      if(mDirection == EDirection::Vertical)
+      {
+        peakRect = IRECT(fillRect.L,
+                         trackPos < mBaseValue ? fillRect.B : fillRect.T,
+                         fillRect.R,
+                         trackPos < mBaseValue ? fillRect.B - mPeakSize: fillRect.T + mPeakSize);
+      }
+      else
+      {
+        peakRect = IRECT(trackPos < mBaseValue ? fillRect.L + mPeakSize : fillRect.R - mPeakSize,
+                         fillRect.T,
+                         trackPos < mBaseValue ? fillRect.L : fillRect.R,
+                         fillRect.B);
+      }
+      
+      DrawPeak(g, peakRect, chIdx, trackPos > mBaseValue);
+    }
+
+    if(mStyle.drawFrame && mDrawTrackFrame)
+      g.DrawRect(GetColor(kFR), r, &mBlend, mStyle.frameThickness);
   }
 
   virtual void DrawTrackBackground(IGraphics& g, const IRECT& r, int chIdx)
@@ -1826,14 +1826,9 @@ public:
 
   void Draw(IGraphics& g) override
   {
-    if(g.HasPathSupport())
-    {
-      g.PathRect(mRECT);
-      g.PathFill(mPattern);
-    }
-    else
-      g.FillRect(mPattern.GetStop(0).mColor, mRECT);
-    
+    g.PathRect(mRECT);
+    g.PathFill(mPattern);
+  
     if(mDrawFrame)
       g.DrawRect(COLOR_LIGHT_GRAY, mRECT);
   }

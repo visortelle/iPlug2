@@ -1176,6 +1176,7 @@ void IVGroupControl::OnInit()
     SetBoundsBasedOnGroup(mGroupName.Get(), mPadL, mPadT, mPadR, mPadB);
   }
 }
+
 void IVGroupControl::Draw(IGraphics& g)
 {
 //  const float cr = GetRoundedCornerRadius(mWidgetBounds);
