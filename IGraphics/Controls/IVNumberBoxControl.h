@@ -21,7 +21,7 @@ BEGIN_IPLUG_NAMESPACE
 BEGIN_IGRAPHICS_NAMESPACE
 
 /** A "meta control" for a number box with an Inc/Dec button
- * It adds several child buttons 
+ * It adds several child buttons if buttons = true
  * @ingroup IControls */
 class IVNumberBoxControl : public IContainer
                          , public IVectorBase
@@ -31,6 +31,7 @@ public:
   : IContainer(bounds, paramIdx, actionFunc)
   , IVectorBase(style.WithDrawShadows(false)
                 .WithDrawFrame(false)
+                .WithValueText(style.valueText.WithVAlign(EVAlign::Middle))
                 .WithLabelText(style.labelText.WithVAlign(EVAlign::Middle)))
   , mFmtStr(fmtStr)
   , mButtons(buttons)
@@ -59,6 +60,9 @@ public:
     
     if (mMouseIsOver)
       g.FillRect(GetColor(kHL), mTextReadout->GetRECT());
+    
+    if (mMouseIsDown)
+      g.FillRect(GetColor(kFG), mTextReadout->GetRECT());
   }
   
   void OnResize() override
@@ -66,7 +70,7 @@ public:
     MakeRects(mRECT, false);
     
     IRECT sections = mWidgetBounds;
-    sections.Pad(0.f, -1.f, -2.f, -2.f);
+    sections.Pad(-1.f);
   
     if (mTextReadout)
     {
@@ -85,7 +89,7 @@ public:
   void OnAttached() override
   {
     IRECT sections = mWidgetBounds;
-    sections.Pad(0.f, -1.f, -2.f, -2.f);
+    sections.Pad(-1.f);
 
     AddChildControl(mTextReadout = new IVLabelControl(sections.ReduceFromLeft(sections.W() * (mButtons ? 0.75f : 1.f)), "0", mStyle.WithDrawFrame(true)));
     
@@ -105,6 +109,8 @@ public:
 
     if(GetParam())
       GetDelegate()->BeginInformHostOfParamChangeFromUI(GetParamIdx());
+    
+    mMouseIsDown = true;
   }
   
   void OnMouseUp(float x, float y, const IMouseMod &mod) override
@@ -114,6 +120,10 @@ public:
     
     if(GetParam())
       GetDelegate()->EndInformHostOfParamChangeFromUI(GetParamIdx());
+    
+    mMouseIsDown = false;
+    
+    SetDirty(true);
   }
   
   void OnMouseDrag(float x, float y, float dX, float dY, const IMouseMod &mod) override
@@ -219,6 +229,7 @@ protected:
   double mRealValue = 0.f;
   bool mHideCursorOnDrag = true;
   bool mButtons = false;
+  bool mMouseIsDown = false;
 };
 
 END_IGRAPHICS_NAMESPACE
