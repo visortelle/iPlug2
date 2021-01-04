@@ -1814,11 +1814,11 @@ protected:
 };
 
 /** An abstract IControl base class that you can inherit from in order to make a control that pops up a menu to browse files */
-class IDirBrowseControlBase : public IControl
+class IDirBrowseControlBase : public IContainer
 {
 public:
   IDirBrowseControlBase(const IRECT& bounds, const char* extension /* e.g. ".txt"*/)
-  : IControl(bounds)
+  : IContainer(bounds)
   {
     mExtension.Set(extension);
   }
