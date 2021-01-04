@@ -53,7 +53,6 @@ public:
   bool RevealPathInExplorerOrFinder(WDL_String& path, bool select) override;
   void PromptForFile(WDL_String& fileName, WDL_String& path, EFileAction action, const char* ext) override;
   void PromptForDirectory(WDL_String& dir) override;
-  bool PromptForColor(IColor& color, const char* str, IColorPickerHandlerFunc func) override;
     
   bool OpenURL(const char* url, const char* msgWindowTitle, const char* confirmMsg, const char* errMsgOnFailure) override;
 
@@ -69,7 +68,7 @@ public:
 
 protected:
   void CreatePlatformImGui() override;
-
+  bool CreatePlatformColorPicker(IColor& color, const char* str, IColorPickerHandlerFunc func) override;
   IPopupMenu* CreatePlatformPopupMenu(IPopupMenu& menu, const IRECT& bounds, bool& isAsync) override;
   void CreatePlatformTextEntry(int paramIdx, const IText& text, const IRECT& bounds, int length, const char* str) override;
 private:

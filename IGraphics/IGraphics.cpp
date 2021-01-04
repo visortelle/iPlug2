@@ -195,6 +195,7 @@ void IGraphics::RemoveAllControls()
   mTextEntryControl = nullptr;
   mCornerResizer = nullptr;
   mPerfDisplay = nullptr;
+  mColorPickerControl = nullptr;
     
 #ifndef NDEBUG
   mLiveEdit = nullptr;
@@ -342,6 +343,16 @@ void IGraphics::AttachBubbleControl(IBubbleControl* pControl)
 {
   pControl->SetDelegate(*GetDelegate());
   mBubbleControls.Add(pControl);
+}
+
+void IGraphics::AttachColorPickerControl()
+{
+  if (!mColorPickerControl)
+  {
+    mColorPickerControl = std::make_unique<IVColorPickerControl>();
+    mColorPickerControl->SetDelegate(*GetDelegate());
+    mColorPickerControl->OnAttached();
+  }
 }
 
 void IGraphics::AttachPopupMenuControl(const IText& text, const IRECT& bounds)
@@ -499,6 +510,9 @@ void IGraphics::ForStandardControlsFunc(std::function<void(IControl& control)> f
 void IGraphics::ForAllControlsFunc(std::function<void(IControl& control)> func)
 {
   ForStandardControlsFunc(func);
+
+  if (mColorPickerControl)
+    func(*mColorPickerControl);
   
   if (mPerfDisplay)
     func(*mPerfDisplay);
@@ -1358,6 +1372,7 @@ IControl* IGraphics::GetMouseControl(float x, float y, bool capture, bool mouseO
   if (!pControl && mTextEntryControl && mTextEntryControl->EditInProgress())
     pControl = mTextEntryControl.get();
   
+  
 #if !defined(NDEBUG)
   if (!pControl && mLiveEdit)
     pControl = mLiveEdit.get();
@@ -1917,6 +1932,18 @@ void IGraphics::CreateTextEntry(IControl& control, const IText& text, const IREC
     CreatePlatformTextEntry(paramIdx, text, bounds, control.GetTextEntryLength(), str);
   
   mInTextEntry->SetDirty(false);
+}
+
+bool IGraphics::PromptForColor(IColor& color, const char* str, IColorPickerHandlerFunc func)
+{
+  if (mColorPickerControl)
+  {
+    float x, y;
+    GetMouseLocation(x, y);
+    return mColorPickerControl->CreateColorPicker(x, y, color, str, func);
+  }
+  else
+    return CreatePlatformColorPicker(color, str, func);
 }
 
 void IGraphics::DoCreatePopupMenu(IControl& control, IPopupMenu& menu, const IRECT& bounds, int valIdx, bool isContext)

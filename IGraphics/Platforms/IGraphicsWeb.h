@@ -70,7 +70,6 @@ public:
   
   void PromptForFile(WDL_String& filename, WDL_String& path, EFileAction action, const char* ext) override;
   void PromptForDirectory(WDL_String& path) override;
-  bool PromptForColor(IColor& color, const char* str, IColorPickerHandlerFunc func) override;
   bool OpenURL(const char* url, const char* msgWindowTitle, const char* confirmMsg, const char* errMsgOnFailure) override;
 
   bool PlatformSupportsMultiTouch() const override { return true; }
@@ -83,7 +82,7 @@ public:
 protected:
   IPopupMenu* CreatePlatformPopupMenu(IPopupMenu& menu, const IRECT& bounds, bool& isAsync) override;
   void CreatePlatformTextEntry(int paramIdx, const IText& text, const IRECT& bounds, int length, const char* str) override;
-    
+  bool CreatePlatformColorPicker(IColor& color, const char* str, IColorPickerHandlerFunc func) override;
 private:
   PlatformFontPtr LoadPlatformFont(const char* fontID, const char* fileNameOrResID) override;
   PlatformFontPtr LoadPlatformFont(const char* fontID, const char* fontName, ETextStyle style) override;
