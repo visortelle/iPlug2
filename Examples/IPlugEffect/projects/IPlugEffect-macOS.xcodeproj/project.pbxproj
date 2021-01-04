@@ -254,6 +254,14 @@
 		4FC3EFFE2086CE5700BD11FA /* processdata.h in Headers */ = {isa = PBXBuildFile; fileRef = 4FC3EFEB2086CE5600BD11FA /* processdata.h */; };
 		4FC3F0002086CE5700BD11FA /* stringconvert.h in Headers */ = {isa = PBXBuildFile; fileRef = 4FC3EFED2086CE5600BD11FA /* stringconvert.h */; };
 		4FC3F0012086CE5700BD11FA /* uid.h in Headers */ = {isa = PBXBuildFile; fileRef = 4FC3EFEE2086CE5600BD11FA /* uid.h */; };
+		4FC6838E25A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
+		4FC6838F25A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
+		4FC6839025A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
+		4FC6839125A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
+		4FC6839225A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
+		4FC6839325A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
+		4FC6839425A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
+		4FC6839525A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */; };
 		4FCE29D621D6ED70004BCBA1 /* ITextEntryControl.h in Headers */ = {isa = PBXBuildFile; fileRef = 4FCE29D321D6ED70004BCBA1 /* ITextEntryControl.h */; };
 		4FCE29D721D6ED70004BCBA1 /* ITextEntryControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FCE29D521D6ED70004BCBA1 /* ITextEntryControl.cpp */; };
 		4FCE29D821D6ED70004BCBA1 /* ITextEntryControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FCE29D521D6ED70004BCBA1 /* ITextEntryControl.cpp */; };
@@ -722,6 +730,8 @@
 		4FC44B9C20F151B90062F870 /* IWebsocketEditorDelegate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWebsocketEditorDelegate.cpp; sourceTree = "<group>"; };
 		4FC44B9E20F16B200062F870 /* IWebsocketServer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IWebsocketServer.cpp; sourceTree = "<group>"; };
 		4FC46E57231440B4000045E7 /* web */ = {isa = PBXFileReference; lastKnownFileType = folder; name = web; path = ../resources/web; sourceTree = "<group>"; };
+		4FC6838C25A1F5CF0009B124 /* IVColorPickerControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IVColorPickerControl.h; sourceTree = "<group>"; };
+		4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IVColorPickerControl.cpp; sourceTree = "<group>"; };
 		4FC82B4520BD522B00722133 /* img */ = {isa = PBXFileReference; lastKnownFileType = folder; name = img; path = ../resources/img; sourceTree = "<group>"; };
 		4FC82B4620BD522B00722133 /* fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = fonts; path = ../resources/fonts; sourceTree = "<group>"; };
 		4FCDB64822C849D200698A4B /* IGraphicsSkia.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IGraphicsSkia.cpp; sourceTree = "<group>"; };
@@ -1128,6 +1138,8 @@
 		4F63695120A463090022C370 /* Controls */ = {
 			isa = PBXGroup;
 			children = (
+				4FC6838C25A1F5CF0009B124 /* IVColorPickerControl.h */,
+				4FC6838D25A1F5ED0009B124 /* IVColorPickerControl.cpp */,
 				4FCE29D521D6ED70004BCBA1 /* ITextEntryControl.cpp */,
 				4FCE29D321D6ED70004BCBA1 /* ITextEntryControl.h */,
 				4F9A82F5213DE80300BE63A4 /* IPopupMenuControl.cpp */,
@@ -2228,6 +2240,7 @@
 				4F78D9BB13B63BA50032E0F3 /* IPlugAPIBase.cpp in Sources */,
 				4FB1F59020E4B010004157C8 /* IGraphicsMac_view.mm in Sources */,
 				4F993F7223055C96000313AF /* IPlugProcessor.cpp in Sources */,
+				4FC6838F25A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 				4F35DEAE207E5C5A00867D8F /* IPlugPluginBase.cpp in Sources */,
 				4F6FD2B222675B6300FC59E6 /* IGraphicsCoreText.mm in Sources */,
 				4F78D9C813B63BA50032E0F3 /* IPlugParameter.cpp in Sources */,
@@ -2239,6 +2252,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F78BE3222E7429B00AD537E /* IPlugAUv3Appex.m in Sources */,
+				4FC6839425A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2247,6 +2261,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F03A5AF20A4621100EBDFFB /* IGraphics.cpp in Sources */,
+				4FC6839125A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 				4F6369E020A464BB0022C370 /* IGraphicsNanoVG_src.m in Sources */,
 				4F6369EE20A466470022C370 /* IControl.cpp in Sources */,
 				4F1A528C205D916F00CF2908 /* IPlugAU.cpp in Sources */,
@@ -2321,6 +2336,7 @@
 				4F78BE1722E7406D00AD537E /* IGraphicsMac.mm in Sources */,
 				4F78BE1822E7406D00AD537E /* IGraphicsCoreText.mm in Sources */,
 				4F78BE1922E7406D00AD537E /* ITextEntryControl.cpp in Sources */,
+				4FC6839525A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 				4F78BE1A22E7406D00AD537E /* IPopupMenuControl.cpp in Sources */,
 				4F78BE1B22E7406D00AD537E /* IControls.cpp in Sources */,
 				4F78BE1E22E7406D00AD537E /* IGraphicsNanoVG_src.m in Sources */,
@@ -2361,6 +2377,7 @@
 				4F815983205D50EB00393585 /* timer.cpp in Sources */,
 				4F815989205D50EB00393585 /* funknown.cpp in Sources */,
 				4FB1F58B20E4B006004157C8 /* IGraphicsMac.mm in Sources */,
+				4FC6839025A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 				4F81598E205D51F000393585 /* vstbus.cpp in Sources */,
 				4F6369ED20A466470022C370 /* IControl.cpp in Sources */,
 				4F35DEAF207E5C5A00867D8F /* IPlugPluginBase.cpp in Sources */,
@@ -2405,6 +2422,7 @@
 				4F6369E120A464BB0022C370 /* IGraphicsNanoVG_src.m in Sources */,
 				4F63697120A463090022C370 /* IControls.cpp in Sources */,
 				4FB6001A1567CB0A0020189A /* IPlugAPIBase.cpp in Sources */,
+				4FC6839225A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 				4F6369EF20A466470022C370 /* IControl.cpp in Sources */,
 				4F03A5B020A4621100EBDFFB /* IGraphics.cpp in Sources */,
 				4F35DEB1207E5C5A00867D8F /* IPlugPluginBase.cpp in Sources */,
@@ -2477,6 +2495,7 @@
 				4F3862EF2014BBEC0009F402 /* IPlugEffect.cpp in Sources */,
 				4F9A82F7213DE80400BE63A4 /* IPopupMenuControl.cpp in Sources */,
 				4F78D90B13B63BA50032E0F3 /* IPlugAPIBase.cpp in Sources */,
+				4FC6838E25A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 				4F35DEAD207E5C5A00867D8F /* IPlugPluginBase.cpp in Sources */,
 				4F8C10E020BA2796006320CD /* IGraphicsEditorDelegate.cpp in Sources */,
 				4FF0A83221BE708700B2C9D1 /* swell-gdi.mm in Sources */,
@@ -2505,6 +2524,7 @@
 				4FFBB91320863B0E00DDD0E7 /* vstpresetfile.cpp in Sources */,
 				4FFBB91520863B0E00DDD0E7 /* timer.cpp in Sources */,
 				4FFBB91720863B0E00DDD0E7 /* funknown.cpp in Sources */,
+				4FC6839325A1F5ED0009B124 /* IVColorPickerControl.cpp in Sources */,
 				4FFBB91820863B0E00DDD0E7 /* vstbus.cpp in Sources */,
 				4FFBB91920863B0E00DDD0E7 /* IPlugPluginBase.cpp in Sources */,
 				4FFBB91A20863B0E00DDD0E7 /* macmain.cpp in Sources */,
