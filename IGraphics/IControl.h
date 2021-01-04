@@ -510,13 +510,15 @@ public:
   Steinberg::tresult PLUGIN_API executeMenuItem (Steinberg::int32 tag) override { OnContextSelection(tag); return Steinberg::kResultOk; }
 #endif
   
-  void AddChildControl(IControl* pControl)
+  IControl* AddChildControl(IControl* pControl)
   {
-    mChildren.push_back(std::unique_ptr<IControl>(pControl));
+    auto ptr = std::unique_ptr<IControl>(pControl);
+    mChildren.push_back(std::move(ptr));
     
     pControl->SetDelegate(*GetDelegate());
     pControl->SetParent(this);
     pControl->OnAttached();
+    return pControl;
   }
   
   void RemoveChildControl(IControl* pControl)
