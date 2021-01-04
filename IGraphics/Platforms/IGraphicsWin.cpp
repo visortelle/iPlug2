@@ -399,6 +399,8 @@ LRESULT CALLBACK IGraphicsWin::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARA
           TRACKMOUSEEVENT eventTrack = { sizeof(TRACKMOUSEEVENT), TME_LEAVE, hWnd, HOVER_DEFAULT };
           if (pGraphics->TooltipsEnabled()) 
           {
+            // FIXME: BROKEN SINCE CHILD CONTROLS
+
             int c = pGraphics->GetMouseOver();
             if (c != pGraphics->mTooltipIdx) 
             {

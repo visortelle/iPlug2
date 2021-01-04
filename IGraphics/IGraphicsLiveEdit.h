@@ -51,11 +51,10 @@ public:
 
   void OnMouseDown(float x, float y, const IMouseMod& mod) override
   {
-    int c = GetUI()->GetMouseControlIdx(x, y, true);
-    
-    if (c > 0)
+    IControl* pControl = GetUI()->HitTestControls(x, y, true);
+
+    if (pControl)
     {
-      IControl* pControl = GetUI()->GetControl(c);
       mMouseDownRECT = pControl->GetRECT();
       mMouseDownTargetRECT = pControl->GetTargetRECT();
 
@@ -66,19 +65,18 @@ public:
 
       if(mod.A)
       {
-        GetUI()->AttachControl(new PlaceHolder(mMouseDownRECT));
-        mClickedOnControl = GetUI()->NControls() - 1;
+        mClickedOnControl = GetUI()->AttachControl(new PlaceHolder(mMouseDownRECT));
         mMouseClickedOnResizeHandle = false;
       }
       else if (mod.R)
       {
-        mClickedOnControl = c;
+        mClickedOnControl = pControl;
         GetUI()->CreatePopupMenu(*this, mRightClickOnControlMenu, x, y);
       }
       else
       {
-        mClickedOnControl = c;
-        
+        mClickedOnControl = pControl;
+
         if(GetHandleRect(mMouseDownRECT).Contains(x, y))
         {
           mMouseClickedOnResizeHandle = true;
@@ -101,7 +99,7 @@ public:
   {
     if(mMouseClickedOnResizeHandle)
     {
-      IControl* pControl = GetUI()->GetControl(mClickedOnControl);
+      IControl* pControl = mClickedOnControl;
       IRECT r = pControl->GetRECT();
       float w = r.R - r.L;
       float h = r.B - r.T;
@@ -112,7 +110,7 @@ public:
         pControl->SetTargetRECT(mMouseDownTargetRECT);
       }
     }
-    mClickedOnControl = -1;
+    mClickedOnControl = nullptr;
     mMouseClickedOnResizeHandle = false;
     GetUI()->SetAllControlsDirty();
     
@@ -125,10 +123,10 @@ public:
   
   void OnMouseOver(float x, float y, const IMouseMod& mod) override
   {
-    int c = GetUI()->GetMouseControlIdx(x, y, true);
-    if (c > 0)
+    IControl* pControl = GetUI()->HitTestControls(x, y, true);
+    if (pControl)
     {
-      IRECT cr = GetUI()->GetControl(c)->GetRECT();
+      IRECT cr = pControl->GetRECT();
       IRECT h = GetHandleRect(cr);
       
       if(h.Contains(x, y))
@@ -148,28 +146,29 @@ public:
     float mouseDownX, mouseDownY;
     GetUI()->GetMouseDownPoint(mouseDownX, mouseDownY);
     
-    if(mClickedOnControl > 0)
+    if(mClickedOnControl)
     {
-      IControl* pControl = GetUI()->GetControl(mClickedOnControl);
+      IControl* pControl = mClickedOnControl;
       
-      if(mMouseClickedOnResizeHandle)
-      {
-        IRECT r = pControl->GetRECT();
-        r.R = SnapToGrid(mMouseDownRECT.R + (x - mouseDownX));
-        r.B = SnapToGrid(mMouseDownRECT.B + (y - mouseDownY));
-        
-        if(r.R < mMouseDownRECT.L +mGridSize) r.R = mMouseDownRECT.L+mGridSize;
-        if(r.B < mMouseDownRECT.T +mGridSize) r.B = mMouseDownRECT.T+mGridSize;
-          
-        GetUI()->SetControlSize(mClickedOnControl, r.W(), r.H());
-      }
-      else
-      {
-        const float x1 = SnapToGrid(mMouseDownRECT.L + (x - mouseDownX));
-        const float y1 = SnapToGrid(mMouseDownRECT.T + (y - mouseDownY));
-          
-        GetUI()->SetControlPosition(mClickedOnControl, x1, y1);
-      }
+      // FIXME: BROKEN SINCE CHILD CONTROLS
+//      if(mMouseClickedOnResizeHandle)
+//      {
+//        IRECT r = pControl->GetRECT();
+//        r.R = SnapToGrid(mMouseDownRECT.R + (x - mouseDownX));
+//        r.B = SnapToGrid(mMouseDownRECT.B + (y - mouseDownY));
+//        
+//        if(r.R < mMouseDownRECT.L +mGridSize) r.R = mMouseDownRECT.L+mGridSize;
+//        if(r.B < mMouseDownRECT.T +mGridSize) r.B = mMouseDownRECT.T+mGridSize;
+//          
+//        GetUI()->SetControlSize(mClickedOnControl, r.W(), r.H());
+//      }
+//      else
+//      {
+//        const float x1 = SnapToGrid(mMouseDownRECT.L + (x - mouseDownX));
+//        const float y1 = SnapToGrid(mMouseDownRECT.T + (y - mouseDownY));
+//          
+//        GetUI()->SetControlPosition(mClickedOnControl, x1, y1);
+//      }
     }
     else
     {
@@ -246,7 +245,7 @@ public:
         case 0:
           mSelectedControls.Empty();
           GetUI()->RemoveControl(mClickedOnControl);
-          mClickedOnControl = -1;
+          mClickedOnControl = nullptr;
           break;
         default:
           break;
@@ -329,7 +328,7 @@ private:
   IRECT mDragRegion;
 
   float mGridSize = 10;
-  int mClickedOnControl = -1;
+  IControl* mClickedOnControl = nullptr;
 };
 
 END_IGRAPHICS_NAMESPACE

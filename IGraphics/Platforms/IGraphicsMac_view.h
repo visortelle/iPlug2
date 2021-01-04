@@ -54,7 +54,8 @@ inline IColor FromNSColor(const NSColor* c)
 
 inline int GetMouseOver(IGraphicsMac* pGraphics)
 {
-  return pGraphics->GetMouseOver();
+  // FIXME: BROKEN SINCE CHILD CONTROLS
+  return 0;//pGraphics->GetMouseOver();
 }
 
 END_IGRAPHICS_NAMESPACE

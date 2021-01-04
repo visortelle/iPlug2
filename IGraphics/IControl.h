@@ -151,7 +151,13 @@ public:
   virtual void OnInit() {}
   
   /** Called after the control has been attached, and its delegate and graphics member variable set. Use this method for controls that might need to attach sub controls that should be above their parent in the stack */
-  virtual void OnAttached() {}
+  virtual void OnAttached()
+  {
+    for(auto&& childControl : mChildren)
+    {
+      childControl->OnAttached();
+    }
+  }
   
   /** Implement to receive messages sent to the control, see IEditorDelegate:SendControlMsgFromDelegate() */
   virtual void OnMsgFromDelegate(int msgTag, int dataSize, const void* pData) {};
@@ -448,6 +454,9 @@ public:
     OnRescale();
   }
   
+  /** Used internally to set the mParent variables */
+  void SetParent(IControl* pParent) { mParent = pParent; }
+  
   /** @return A pointer to the IGraphics context that owns this control */ 
   IGraphics* GetUI() { return mGraphics; }
     
@@ -500,6 +509,43 @@ public:
 #if defined VST3_API || defined VST3C_API
   Steinberg::tresult PLUGIN_API executeMenuItem (Steinberg::int32 tag) override { OnContextSelection(tag); return Steinberg::kResultOk; }
 #endif
+  
+  void AddChildControl(IControl* pControl)
+  {
+    mChildren.push_back(std::unique_ptr<IControl>(pControl));
+    
+    pControl->SetDelegate(*GetDelegate());
+    pControl->SetParent(this);
+    pControl->OnAttached();
+  }
+  
+  void RemoveChildControl(IControl* pControl)
+  {
+    // TODO
+  }
+  
+  IControl* GetChildControl(int idx)
+  {
+    return mChildren[idx].get();
+  }
+  
+  int GetIndexOfChildControl(IControl* pChildControl)
+  {
+    int idx = 0;
+    for (auto&& child : mChildren)
+    {
+      if(child.get() == pChildControl)
+        return idx;
+      idx++;
+    }
+    
+    return -1;
+  }
+  
+  int NChildren() const
+  {
+    return static_cast<int>(mChildren.size());
+  }
   
 #pragma mark - IControl Member variables
 protected:
@@ -574,6 +620,8 @@ private:
   std::vector<ParamTuple> mVals { {kNoParameter, 0.} };
   std::unordered_map<EGestureType, IGestureFunc> mGestureFuncs;
   EGestureType mLastGesture = EGestureType::Unknown;
+  std::vector<std::unique_ptr<IControl>> mChildren;
+  IControl* mParent = nullptr;
 };
 
 #pragma mark - Base Controls

@@ -1304,11 +1304,11 @@ public:
 
   /** @param idx The index of the control to get
    * @return A pointer to the IControl object at idx or nullptr if not found */
-  IControl* GetControl(int idx) { return mControls.Get(idx); }
+  IControl* GetControl(int idx);
 
   /** @param pControl Pointer to the control to get
    * @return integer index of the control in mControls array or -1 if not found */
-  int GetControlIdx(IControl* pControl) const { return mControls.Find(pControl); }
+  int GetControlIdx(IControl* pControl) const;
   
   /** Gets the index of a tagged control
    * @param ctrlTag The tag to look for
@@ -1356,7 +1356,7 @@ public:
   }
   
   /* Get the first control in the control list, the background */
-  IControl* GetBackgroundControl() { return GetControl(0);  }
+  IControl* GetBackgroundControl() { return mRootControl.get();  }
   
   /** @return Pointer to the special pop-up menu control, if one has been attached */
   IPopupMenuControl* GetPopupMenuControl() { return mPopupControl.get(); }
@@ -1380,8 +1380,10 @@ public:
   void UpdatePeers(IControl* pCaller, int callerValIdx);
   
   /** @return The number of controls that have been added to this graphics context */
-  int NControls() const { return mControls.GetSize(); }
+  int NControls() const;
 
+  // FIXME: RemoveControlXXX BROKEN SINCE CHILD CONTROLS
+  
   /** Remove controls from the control list with a particular tag.  */
   void RemoveControlWithTag(int ctrlTag);
   
@@ -1431,12 +1433,12 @@ public:
   void SetControlBounds(int idx, const IRECT& r);
   
 private:
-  /** Get the index of the control at x and y coordinates on mouse event
+  /** Get the control that is hit by the mouse
    * @param x The X coordinate to test
    * @param y The Y coordinate to test
    * @param mouseOver Is this initiated from mouse over event
-   * @return int the index of the hit control in the control stack */
-  int GetMouseControlIdx(float x, float y, bool mouseOver = false);
+   * @return The control that was hit */
+  IControl* HitTestControls(float x, float y, bool mouseOver = false);
   
   /** Get the control at x and y coordinates on mouse event
    * @param x The X coordinate to test
@@ -1516,9 +1518,6 @@ public:
 
   /** @return \c true if the context can handle mouse overs */
   bool CanEnableMouseOver() const { return mEnableMouseOver; }
-
-  /** @return An integer representing the control index in IGraphics::mControls which the mouse is over, or -1 if it is not */
-  inline int GetMouseOver() const { return mMouseOverIdx; }
 
   /** Get the x, y position of the last mouse down message. Does not get cleared on mouse up etc.
    * @param x Where the X position will be stored
@@ -1722,10 +1721,9 @@ private:
   void ClearMouseOver()
   {
     mMouseOver = nullptr;
-    mMouseOverIdx = -1;
   }
   
-  WDL_PtrList<IControl> mControls;
+  std::unique_ptr<IControl> mRootControl;
   std::unordered_map<int, IControl*> mCtrlTags;
 
   // Order (front-to-back) ToolTip / PopUp / TextEntry / LiveEdit / Corner / PerfDisplay
@@ -1760,7 +1758,6 @@ private:
   bool mIsContextMenu = false;
   int mTextEntryValIdx = kNoValIdx;
   int mPopupMenuValIdx = kNoValIdx;
-  int mMouseOverIdx = -1;
   float mMouseDownX = -1.f;
   float mMouseDownY = -1.f;
   float mMinScale;

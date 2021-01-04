@@ -84,8 +84,13 @@ void IGraphics::SetScreenScale(int scale)
   int windowHeight = WindowHeight() * GetPlatformWindowScale();
     
   PlatformResize(GetDelegate()->EditorResizeFromUI(windowWidth, windowHeight, true));
-  ForAllControls(&IControl::OnRescale);
-  SetAllControlsDirty();
+  
+  if(NControls())
+  {
+    ForAllControls(&IControl::OnRescale);
+    SetAllControlsDirty();
+  }
+  
   DrawResize();
 }
 
@@ -124,9 +129,27 @@ void IGraphics::SetLayoutOnResize(bool layoutOnResize)
   mLayoutOnResize = layoutOnResize;
 }
 
+IControl* IGraphics::GetControl(int idx)
+{
+  return mRootControl->GetChildControl(idx);
+}
+
+int IGraphics::GetControlIdx(IControl* pControl) const
+{
+  return mRootControl->GetIndexOfChildControl(pControl);
+}
+
+int IGraphics::NControls() const
+{
+  if(mRootControl)
+    return mRootControl->NChildren();
+  else
+    return 0;
+}
+
 void IGraphics::RemoveControlWithTag(int ctrlTag)
 {
-  mControls.DeletePtr(GetControlWithTag(ctrlTag));
+//  mControls.DeletePtr(GetControlWithTag(ctrlTag));
   mCtrlTags.erase(ctrlTag);
   SetAllControlsDirty();
 }
@@ -153,7 +176,7 @@ void IGraphics::RemoveControls(int fromIdx)
     if(pControl->GetTag() > kNoTag)
       mCtrlTags.erase(pControl->GetTag());
     
-    mControls.Delete(idx--, true);
+//    mControls.Delete(idx--, true);
   }
   
   SetAllControlsDirty();
@@ -181,7 +204,7 @@ void IGraphics::RemoveControl(IControl* pControl)
   if(pControl->GetTag() > kNoTag)
     mCtrlTags.erase(pControl->GetTag());
   
-  mControls.DeletePtr(pControl, true);
+//  mControls.DeletePtr(pControl, true);
   
   SetAllControlsDirty();
 }
@@ -203,7 +226,7 @@ void IGraphics::RemoveAllControls()
   mBubbleControls.Empty(true);
   
   mCtrlTags.clear();
-  mControls.Empty(true);
+  mRootControl = nullptr;
 }
 
 void IGraphics::SetControlPosition(int idx, float x, float y)
@@ -277,23 +300,20 @@ void IGraphics::SetControlValueAfterPopupMenu(IPopupMenu* pMenu)
 
 void IGraphics::AttachBackground(const char* fileName)
 {
-  IControl* pBG = new IBitmapControl(0, 0, LoadBitmap(fileName, 1, false), kNoParameter, EBlend::Default);
-  pBG->SetDelegate(*GetDelegate());
-  mControls.Insert(0, pBG);
+  mRootControl = std::make_unique<IBitmapControl>(0, 0, LoadBitmap(fileName, 1, false), kNoParameter, EBlend::Default);
+  mRootControl->SetDelegate(*GetDelegate());
 }
 
 void IGraphics::AttachSVGBackground(const char* fileName)
 {
-  IControl* pBG = new ISVGControl(GetBounds(), LoadSVG(fileName), true);
-  pBG->SetDelegate(*GetDelegate());
-  mControls.Insert(0, pBG);
+  mRootControl = std::make_unique<ISVGControl>(GetBounds(), LoadSVG(fileName), true);
+  mRootControl->SetDelegate(*GetDelegate());
 }
 
 void IGraphics::AttachPanelBackground(const IPattern& color)
 {
-  IControl* pBG = new IPanelControl(GetBounds(), color);
-  pBG->SetDelegate(*GetDelegate());
-  mControls.Insert(0, pBG);
+  mRootControl = std::make_unique<IPanelControl>(GetBounds(), color);
+  mRootControl->SetDelegate(*GetDelegate());
 }
 
 IControl* IGraphics::AttachControl(IControl* pControl, int ctrlTag, const char* group)
@@ -306,12 +326,8 @@ IControl* IGraphics::AttachControl(IControl* pControl, int ctrlTag, const char* 
     if (!result.second)
       return nullptr;
   }
-  
-  pControl->SetDelegate(*GetDelegate());
   pControl->SetGroup(group);
-  mControls.Add(pControl);
-    
-  pControl->OnAttached();
+  mRootControl->AddChildControl(pControl);
   return pControl;
 }
 
@@ -493,10 +509,22 @@ void IGraphics::ForControlInGroup(const char* group, std::function<void(IControl
   }
 }
 
+void LoopOverChildren(IControl* pParent, std::function<void(IControl& control)> func)
+{
+  func(*pParent);
+
+  int nChildren = pParent->NChildren();
+  
+  for (auto c = 0; c < nChildren; c++)
+  {
+    LoopOverChildren(pParent->GetChildControl(c), func);
+  }
+};
+
 void IGraphics::ForStandardControlsFunc(std::function<void(IControl& control)> func)
 {
-  for (auto c = 0; c < NControls(); c++)
-    func(*GetControl(c));
+  IControl* pParent = mRootControl.get();
+  LoopOverChildren(pParent, func);
 }
 
 void IGraphics::ForAllControlsFunc(std::function<void(IControl& control)> func)
@@ -1290,40 +1318,71 @@ void IGraphics::ReleaseMouseCapture()
     HideMouseCursor(false);
 }
 
-int IGraphics::GetMouseControlIdx(float x, float y, bool mouseOver)
+IControl* HitTestRecursive(float x, float y, IControl* pParent, bool mouseOver)
+{
+  if(pParent->IsHit(x, y))
+  {
+    int nChildren = pParent->NChildren();
+    
+    for (auto c = nChildren-1; c >= 0; c--)
+    {
+      IControl* pChild = pParent->GetChildControl(c);
+      
+      if (!pChild->IsHidden() && !pChild->GetIgnoreMouse())
+      {
+        if ((!pChild->IsDisabled() || (mouseOver ? pChild->GetMouseOverWhenDisabled() : pChild->GetMouseEventsWhenDisabled())))
+        {
+          IControl* pChildIfHit = HitTestRecursive(x, y, pChild, mouseOver);
+          
+          if(pChildIfHit)
+            return pChildIfHit;
+        }
+      }
+    }
+    
+    return pParent;
+  }
+  
+  return nullptr;
+};
+
+IControl* IGraphics::HitTestControls(float x, float y, bool mouseOver)
 {
   if (!mouseOver || mEnableMouseOver)
   {
-    // Search from front to back
-    for (auto c = NControls() - 1; c >= (mouseOver ? 1 : 0); --c)
-    {
-      IControl* pControl = GetControl(c);
-
-#ifndef NDEBUG
-      if(!mLiveEdit)
-      {
-#endif
-        if (!pControl->IsHidden() && !pControl->GetIgnoreMouse())
-        {
-          if ((!pControl->IsDisabled() || (mouseOver ? pControl->GetMouseOverWhenDisabled() : pControl->GetMouseEventsWhenDisabled())))
-          {
-            if (pControl->IsHit(x, y))
-            {
-              return c;
-            }
-          }
-        }
-#ifndef NDEBUG
-      }
-      else if (pControl->GetRECT().Contains(x, y))
-      {
-        return c;
-      }
-#endif
-    }
+    return HitTestRecursive(x, y, GetBackgroundControl(), mouseOver);
   }
-  
-  return -1;
+//    int nControls = NControls();
+//    // Search from front to back
+//    for (auto c = nControls - 1; c >= (mouseOver ? 1 : 0); --c)
+//    {
+//      IControl* pControl = GetControl(c);
+//
+//#ifndef NDEBUG
+//      if(!mLiveEdit)
+//      {
+//#endif
+//        if (!pControl->IsHidden() && !pControl->GetIgnoreMouse())
+//        {
+//          if ((!pControl->IsDisabled() || (mouseOver ? pControl->GetMouseOverWhenDisabled() : pControl->GetMouseEventsWhenDisabled())))
+//          {
+//            if (pControl->IsHit(x, y))
+//            {
+//              return pControl;
+//            }
+//          }
+//        }
+//#ifndef NDEBUG
+//      }
+//      else if (pControl->GetRECT().Contains(x, y))
+//      {
+//        return c;
+//      }
+//#endif
+//    }
+//  }
+
+  return nullptr;
 }
 
 IControl* IGraphics::GetMouseControl(float x, float y, bool capture, bool mouseOver, ITouchID touchID)
@@ -1339,8 +1398,6 @@ IControl* IGraphics::GetMouseControl(float x, float y, bool capture, bool mouseO
     if(pControl)
       return pControl;
   }
-  
-  int controlIdx = -1;
   
   if (!pControl && mPopupControl && mPopupControl->GetExpanded())
     pControl = mPopupControl.get();
@@ -1361,8 +1418,7 @@ IControl* IGraphics::GetMouseControl(float x, float y, bool capture, bool mouseO
   
   if (!pControl)
   {
-    controlIdx = GetMouseControlIdx(x, y, mouseOver);
-    pControl = (controlIdx >= 0) ? GetControl(controlIdx) : nullptr;
+    pControl = HitTestControls(x, y, mouseOver);
   }
   
   if (capture && pControl)
@@ -1379,9 +1435,6 @@ IControl* IGraphics::GetMouseControl(float x, float y, bool capture, bool mouseO
     
 //    DBGMSG("ADD - NCONTROLS captured = %lu\n", mCapturedMap.size());
   }
-  
-  if (mouseOver)
-    mMouseOverIdx = controlIdx;
   
   return pControl;
 }
