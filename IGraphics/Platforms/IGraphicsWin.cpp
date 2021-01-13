@@ -401,13 +401,13 @@ LRESULT CALLBACK IGraphicsWin::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARA
           {
             // FIXME: BROKEN SINCE CHILD CONTROLS
 
-            int c = pGraphics->GetMouseOver();
-            if (c != pGraphics->mTooltipIdx) 
-            {
-              if (c >= 0) eventTrack.dwFlags |= TME_HOVER;
-              pGraphics->mTooltipIdx = c;
-              pGraphics->HideTooltip();
-            }
+            //int c = pGraphics->GetMouseOver();
+            //if (c != pGraphics->mTooltipIdx) 
+            //{
+            //  if (c >= 0) eventTrack.dwFlags |= TME_HOVER;
+            //  pGraphics->mTooltipIdx = c;
+            //  pGraphics->HideTooltip();
+            //}
           }
 
           TrackMouseEvent(&eventTrack);
