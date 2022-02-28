@@ -5,8 +5,6 @@
 IPlugSOUL::IPlugSOUL(const InstanceInfo& info)
 : Plugin(info, MakeConfig(DSP::numParameters, kNumPresets))
 {
-  mSOULParams = mDSP.createParameterList();
-  
   int paramIdx = 0;
   for (auto& p : DSP::getParameterProperties()) {
     mParamMap.insert(std::make_pair(p.name, paramIdx));
@@ -29,7 +27,11 @@ IPlugSOUL::IPlugSOUL(const InstanceInfo& info)
     paramIdx++;
   }
   
-  #if IPLUG_EDITOR // http://bit.ly/2S64BDd
+  #if IPLUG_DSP
+    mSOULParams = mDSP.createParameterList();
+  #endif
+  
+  #if IPLUG_EDITOR
     mMakeGraphicsFunc = [&]() {
       return MakeGraphics(*this, PLUG_WIDTH, PLUG_HEIGHT, PLUG_FPS, GetScaleForScreen(PLUG_WIDTH, PLUG_HEIGHT));
     };
@@ -38,14 +40,10 @@ IPlugSOUL::IPlugSOUL(const InstanceInfo& info)
       pGraphics->AttachPanelBackground(COLOR_ORANGE);
       pGraphics->LoadFont("Roboto-Regular", ROBOTO_FN);
       const IRECT b = pGraphics->GetBounds();
-      pGraphics->AttachControl(new IVKnobControl(b.GetCentredInside(100), GetIPlugParamIdx("volume")));
+      pGraphics->AttachControl(new IVKnobControl(b.GetCentredInside(100).GetVShifted(-50), GetIPlugParamIdx("volume")));
+      pGraphics->AttachControl(new IVKeyboardControl(b.GetFromBottom(50)));
     };
-  #endif
-}
-
-int IPlugSOUL::GetIPlugParamIdx(const char* soulParamUID)
-{
-  return mParamMap[soulParamUID];
+  #endif // IPLUG_EDITOR
 }
 
 #if IPLUG_DSP
@@ -68,6 +66,7 @@ void IPlugSOUL::ProcessBlock(sample** inputs, sample** outputs, int nFrames)
   }
   
   for (auto i=0; i<DSP::numAudioOutputChannels; i++) {
+    memset(outputs[i], 0, nFrames * sizeof(sample));
     renderCtx.outputChannels[i] = outputs[i];
   }
   
@@ -78,16 +77,28 @@ void IPlugSOUL::ProcessBlock(sample** inputs, sample** outputs, int nFrames)
   mDSP.setTimeSignature(mTimeInfo.mNumerator, mTimeInfo.mDenominator);
   mDSP.setTransportState(mTimeInfo.mTransportIsRunning ? 1 : 0);
   
+  if(mIncomingMIDIMessages.size()) {
+    renderCtx.incomingMIDI.messages = std::addressof (mIncomingMIDIMessages[0]);
+    renderCtx.incomingMIDI.numMessages = static_cast<uint32_t>(mIncomingMIDIMessages.size());
+  }
+  
   mDSP.render(renderCtx);
+  mIncomingMIDIMessages.clear();
+}
+
+void IPlugSOUL::ProcessMidiMsg(const IMidiMsg& msg)
+{
+  mIncomingMIDIMessages.push_back({static_cast<uint32_t>(msg.mOffset), msg.mStatus, msg.mData1, msg.mData2});
 }
 
 void IPlugSOUL::OnReset()
 {
   mDSP.init(GetSampleRate(), mSessionID++);
+  mIncomingMIDIMessages.reserve(GetBlockSize());
 }
 
 void IPlugSOUL::OnParamChange(int paramIdx)
 {
   mParamsToUpdate.Push(paramIdx);
 }
-#endif
+#endif // IPLUG_DSP

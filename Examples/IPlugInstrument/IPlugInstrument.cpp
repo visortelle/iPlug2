@@ -82,7 +82,7 @@ IPlugInstrument::IPlugInstrument(const InstanceInfo& info)
     });
 
 #ifdef OS_IOS
-    if(!IsAuv3AppExtension())
+    if(!IsOOPAuv3AppExtension())
     {
       pGraphics->AttachControl(new IVButtonControl(b.GetFromTRHC(100, 100), [pGraphics](IControl* pCaller) {
                                dynamic_cast<IGraphicsIOS*>(pGraphics)->LaunchBluetoothMidiDialog(pCaller->GetRECT().L, pCaller->GetRECT().MH());
