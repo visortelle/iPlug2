@@ -49,7 +49,7 @@ public:
     std::vector<char> base64;
     base64.resize(GetBase64Length(dataSize));
     wdl_base64encode(reinterpret_cast<const unsigned char*>(pData), base64.data(), dataSize);
-    str.SetFormatted(mMaxJSStringLength, "SCMFD(%i, %i, %i, %s)", ctrlTag, msgTag, dataSize, base64.data());
+    str.SetFormatted(mMaxJSStringLength, "SCMFD(%i, %i, %i, '%s')", ctrlTag, msgTag, dataSize, base64.data());
     EvaluateJavaScript(str.Get());
   }
 
@@ -112,11 +112,7 @@ public:
     }
   }
 
-  void Resize(int width, int height)
-  {
-    SetWebViewBounds(0, 0, static_cast<float>(width), static_cast<float>(height));
-    EditorResizeFromUI(width, height, true);
-  }
+  void Resize(int width, int height);
 
   void OnWebViewReady() override
   {
@@ -142,6 +138,7 @@ protected:
   
   int mMaxJSStringLength = kDefaultMaxJSStringLength;
   std::function<void()> mEditorInitFunc = nullptr;
+  void* mHelperView = nullptr;
 };
 
 END_IPLUG_NAMESPACE

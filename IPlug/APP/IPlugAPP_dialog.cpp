@@ -26,6 +26,10 @@ using namespace iplug;
 using namespace igraphics;
 #endif
 
+#if defined OS_MAC
+extern int GetTitleBarOffset();
+#endif
+
 // check the input and output devices, find matching srs
 void IPlugAPPHost::PopulateSampleRateList(HWND hwndDlg, RtAudio::DeviceInfo* inputDevInfo, RtAudio::DeviceInfo* outputDevInfo)
 {
@@ -530,7 +534,7 @@ static void ClientResize(HWND hWnd, int nWidth, int nHeight)
 }
 
 #ifdef OS_WIN 
-extern int GetScaleForHWND(HWND hWnd);
+extern float GetScaleForHWND(HWND hWnd);
 #endif
 
 //static
@@ -708,17 +712,17 @@ WDL_DLGRET IPlugAPPHost::MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
       mmi->ptMaxTrackSize.y = pPlug->GetMaxHeight();
       
 #ifdef OS_MAC
-      const int titleBarOffset = 22;
+      const int titleBarOffset = GetTitleBarOffset();
       mmi->ptMinTrackSize.y += titleBarOffset;
       mmi->ptMaxTrackSize.y += titleBarOffset;
 #endif
 
 #ifdef OS_WIN 
-      int scale = GetScaleForHWND(hwndDlg);
-      mmi->ptMinTrackSize.x *= scale;
-      mmi->ptMinTrackSize.y *= scale;
-      mmi->ptMaxTrackSize.x *= scale;
-      mmi->ptMaxTrackSize.y *= scale;
+      float scale = GetScaleForHWND(hwndDlg);
+      mmi->ptMinTrackSize.x = static_cast<LONG>(static_cast<float>(mmi->ptMinTrackSize.x) * scale);
+      mmi->ptMinTrackSize.y = static_cast<LONG>(static_cast<float>(mmi->ptMinTrackSize.y) * scale);
+      mmi->ptMaxTrackSize.x = static_cast<LONG>(static_cast<float>(mmi->ptMaxTrackSize.x) * scale);
+      mmi->ptMaxTrackSize.y = static_cast<LONG>(static_cast<float>(mmi->ptMaxTrackSize.y) * scale);
 #endif
       
       return 0;
@@ -728,7 +732,7 @@ WDL_DLGRET IPlugAPPHost::MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
     {
       WORD dpi = HIWORD(wParam);
       RECT* rect = (RECT*)lParam;
-      int scale = GetScaleForHWND(hwndDlg);
+      float scale = GetScaleForHWND(hwndDlg);
 
       POINT ptDiff;
       RECT rcClient;
@@ -775,11 +779,11 @@ WDL_DLGRET IPlugAPPHost::MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
       {
         RECT r;
         GetClientRect(hwndDlg, &r);
-        int scale = 1;
+        float scale = 1.f;
         #ifdef OS_WIN 
         scale = GetScaleForHWND(hwndDlg);
         #endif
-        pPlug->OnParentWindowResize(r.right / scale, r.bottom / scale);
+        pPlug->OnParentWindowResize(static_cast<int>(r.right / scale), static_cast<int>(r.bottom / scale));
         return 1;
       }
       default:
